@@ -1,0 +1,1116 @@
+int scenario shuffle(int list, ref int[] point_x, ref int[] point_y)
+{
+	int l = list;
+	while (l > 1) {
+		int rand = (rand_int(0, l) % l);
+		l--;
+		int swap_x = point_x[rand];
+		point_x[rand] = point_x[l];
+		point_x[l] = swap_x;
+		
+		int swap_y = point_y[rand];
+		point_y[rand] = point_y[l];
+		point_y[l] = swap_y;
+	}
+}
+
+bool scenario CanBuildCityHere(int who)
+{
+	int max_size = world_x_size() * world_y_size();
+	int rows = world_x_size();
+	int cols = world_y_size();
+	int[] point_x;
+	int[] point_y;
+	int dist = 15;
+	for (int y = 0; y < max_size; y++)
+	{
+		point_x[y] = y % rows;
+		point_y[y] = y / rows;
+	}
+	
+	shuffle(max_size,point_x,point_y);
+
+	for (int i = 0; i < max_size; i++)
+	{
+		int new_x = point_x[i];
+		int new_y = point_y[i];
+		int okNearCity = 0;
+int currentCity = 0;
+		if (territory_owner(new_x,new_y) == who)
+		{
+			for (int j = 1; j <= num_cities(who); j++)
+			{	
+currentCity = find_city_id(find_city_with_num(who,j));
+int curr_city_pos_x = object_position_x(who, currentCity);
+int curr_city_pos_y = object_position_y(who, currentCity);
+
+				bool is_near_x = ((curr_city_pos_x - new_x) < 0 ? ((curr_city_pos_x - new_x) <= -dist) : ((curr_city_pos_x - new_x) >= dist));
+				bool is_near_y = ((curr_city_pos_y - new_y) < 0 ? ((curr_city_pos_y - new_y) <= -dist) : ((curr_city_pos_y - new_y) >= dist));
+
+				if (is_near_x && is_near_y)
+				{
+					okNearCity++;;
+				}
+				
+				if (okNearCity == num_cities(who))
+				{
+				create_building_near(who,new_x,new_y, "Small City",30);
+					return true;
+				}
+			}
+		}
+	}
+	
+	return false;
+}
+
+bool scenario CanBuildOilWellOrPlat(int who)
+{
+	if (have_tech(who, "Industrial Age") <= 0 )
+	{
+		return false;
+	}
+	
+	int rand = rand_int(1,2);
+	int limit_oil = 2;
+	for (int i = 1; i <= num_cities(who); i++)
+	{
+		string cityFoundName = find_city_with_num(who,i);
+		int num_oil_well = num_city_buildings(who, cityFoundName, "Oil Well", true);
+		int num_oil_plat = num_city_buildings(who, cityFoundName, "Oil Platform", true);
+		int num_oil_build = num_oil_well + num_oil_plat;
+		if (num_oil_build < limit_oil)
+		{
+			int find_idle_civi = find_num_idle_unit(who, "Citizen");
+			if (find_idle_civi >= 1)
+			{
+				if (rand == 1)
+				{
+					place_building_with_cost(who, "Oil Well", cityFoundName);
+				}
+				else
+				{
+					place_building_with_cost(who, "Oil Platform", cityFoundName);
+				}
+			}
+			else if(num_type_queued(who, find_city_id(cityFoundName),"Citizen") <= 0)
+			{
+				train_unit_at_with_cost(who,1,"Citizen",find_city_id(cityFoundName));
+			}
+		}
+	}
+	
+	return false;
+}
+
+bool scenario CanBuildFarm(int who)
+{
+	int limit_farm = 3;
+	for (int i = 1; i <= num_cities(who); i++)
+	{
+		string cityFoundName = find_city_with_num(who,i);
+		
+		if (num_city_buildings(who, cityFoundName, "Farm", true) < limit_farm)
+		{
+			int find_idle_civi = find_num_idle_unit(who, "Citizen");
+			if (find_idle_civi >= 1)
+			{
+				place_building_with_cost(who, "Farm", cityFoundName);
+			}
+			else if(num_type_queued(who, find_city_id(cityFoundName),"Citizen") <= 0)
+			{
+				train_unit_at_with_cost(who,1,"Citizen",find_city_id(cityFoundName));
+			}
+		}
+	}
+	
+	return false;
+}
+
+bool scenario CanBuildWoodCutter(int who)
+{
+	int limit_woodcutter = 1;
+	for (int i = 1; i <= num_cities(who); i++)
+	{
+		string cityFoundName = find_city_with_num(who,i);
+		int num_build = num_city_buildings(who, cityFoundName, "Woodcutter's Camp", true);
+		if (num_build < limit_woodcutter)
+		{
+			int find_idle_civi = find_num_idle_unit(who, "Citizen");
+			if (find_idle_civi >= 1)
+			{
+				place_building_with_cost(who, "Woodcutter's Camp", cityFoundName);
+			}
+			else if(num_type_queued(who, find_city_id(cityFoundName),"Citizen") <= 0)
+			{
+				train_unit_at_with_cost(who,1,"Citizen",find_city_id(cityFoundName));
+			}
+		}
+	}
+	
+	return false;
+}
+
+bool scenario CanBuildMine(int who)
+{
+	if (have_tech(who, "Classical Age") <= 0)
+	{
+		return false;
+	}
+	
+	int limit_mine = 1;
+	for (int i = 1; i <= num_cities(who); i++)
+	{
+		string cityFoundName = find_city_with_num(who,i);
+		int num_build = num_city_buildings(who, cityFoundName, "Mine", true);
+		if (num_build < limit_mine)
+		{
+			int find_idle_civi = find_num_idle_unit(who, "Citizen");
+			if (find_idle_civi >= 1)
+			{
+				place_building_with_cost(who, "Mine", cityFoundName);
+			}
+			else if(num_type_queued(who, find_city_id(cityFoundName),"Citizen") <= 0)
+			{
+				train_unit_at_with_cost(who,1,"Citizen",find_city_id(cityFoundName));
+			}
+		}
+	}
+	
+	return false;
+}
+
+
+bool scenario CanBuildPowerUp(int who)
+{
+	int limit_PowerUp = 1;
+	for (int i = 1; i <= num_cities(who); i++)
+	{
+		string cityFoundName = find_city_with_num(who,i);
+		int power_up_1 = num_city_buildings(who, cityFoundName, "Granary", true);
+		int power_up_2 = num_city_buildings(who, cityFoundName, "Lumber Mill", true);
+		int power_up_3 = num_city_buildings(who, cityFoundName, "Smelter", true);
+		int power_up_4 = num_city_buildings(who, find_capital(who), "Refinery", true);
+		
+		if (power_up_1 < limit_PowerUp && have_tech(who,"Mathematics") > 0 && have_tech(who,"Classical Age") > 0)
+		{
+			int find_idle_civi = find_num_idle_unit(who, "Citizen");
+			if (find_idle_civi >= 1)
+			{
+				place_building_with_cost(who, "Granary", cityFoundName);
+			}
+			else if(num_type_queued(who, find_city_id(cityFoundName),"Citizen") <= 0)
+			{
+				train_unit_at_with_cost(who,1,"Citizen",find_city_id(cityFoundName));
+			}
+		}
+		
+		if (power_up_2 < limit_PowerUp  && have_tech(who,"Mathematics") > 0 && have_tech(who,"Classical Age") > 0)
+		{
+			int find_idle_civi = find_num_idle_unit(who, "Citizen");
+			if (find_idle_civi >= 1)
+			{
+				place_building_with_cost(who, "Lumber Mill", cityFoundName);
+			}
+			else if(num_type_queued(who, find_city_id(cityFoundName),"Citizen") <= 0)
+			{
+				train_unit_at_with_cost(who,1,"Citizen",find_city_id(cityFoundName));
+			}
+		}
+		
+		if (power_up_3 < limit_PowerUp && have_tech(who,"Chemistry") > 0 && have_tech(who,"Classical Age") > 0)
+		{
+			int find_idle_civi = find_num_idle_unit(who, "Citizen");
+			if (find_idle_civi >= 1)
+			{
+				place_building_with_cost(who, "Smelter", cityFoundName);
+			}
+			else if(num_type_queued(who, find_city_id(cityFoundName),"Citizen") <= 0)
+			{
+				train_unit_at_with_cost(who,1,"Citizen",find_city_id(cityFoundName));
+			}
+		}
+		
+		if (power_up_4 < limit_PowerUp && have_tech(who,"Electronics") > 0 && have_tech(who,"Industrial Age") > 0)
+		{
+			int find_idle_civi = find_num_idle_unit(who, "Citizen");
+			if (find_idle_civi >= 1)
+			{
+				place_building_with_cost(who, "Refinery", cityFoundName);
+			}
+			else if(num_type_queued(who, find_city_id(cityFoundName),"Citizen") <= 0)
+			{
+				train_unit_at_with_cost(who,1,"Citizen",find_city_id(cityFoundName));
+			}
+		}
+		
+		power_up_1 = num_city_buildings(who, cityFoundName, "Granary", false);
+		power_up_2 = num_city_buildings(who, cityFoundName, "Lumber Mill", false);
+		power_up_3 = num_city_buildings(who, cityFoundName, "Smelter", false);
+		
+		if (power_up_1 != 0 && power_up_1 != -1 && cityFoundName == find_capital(who))
+		{
+			if (have_tech(who, "Agriculture") <= 0)
+			{
+				research_tech_with_cost(who,"Agriculture");
+			}
+			else if (have_tech(who, "Crop Rotation") <= 0)
+			{
+				research_tech_with_cost(who,"Crop Rotation");
+			}
+			else if (have_tech(who, "Food Industry") <= 0)
+			{
+				research_tech_with_cost(who,"Food Industry");
+			}
+			
+			if (have_tech(who, "Herbal Lore") <= 0)
+			{
+				research_tech_with_cost(who,"Herbal Lore");
+			}
+			else if (have_tech(who, "Medicine") <= 0)
+			{
+				research_tech_with_cost(who,"Medicine");
+			}
+			else if (have_tech(who, "Pharmaceuticals") <= 0)
+			{
+				research_tech_with_cost(who,"Pharmaceuticals");
+			}	
+		}
+
+		if (power_up_2 != 0 && power_up_2 != -1 && cityFoundName == find_capital(who))
+		{
+			if (have_tech(who, "Carpentry") <= 0)
+			{
+				research_tech_with_cost(who,"Carpentry");
+			}
+			else if (have_tech(who, "Logging Industry") <= 0)
+			{
+				research_tech_with_cost(who,"Logging Industry");
+			}
+			else if (have_tech(who, "Papermill") <= 0)
+			{
+				research_tech_with_cost(who,"Papermill");
+			}
+			
+			if (have_tech(who, "Construction") <= 0)
+			{
+				research_tech_with_cost(who,"Construction");
+			}
+			else if (have_tech(who, "Architecture") <= 0)
+			{
+				research_tech_with_cost(who,"Architecture");
+			}
+			else if (have_tech(who, "Engineering") <= 0)
+			{
+				research_tech_with_cost(who,"Engineering");
+			}	
+		}
+		
+		if (power_up_3 != 0 && power_up_3 != -1 && cityFoundName == find_capital(who))
+		{
+			if (have_tech(who, "Metal Alloys") <= 0)
+			{
+				research_tech_with_cost(who,"Metal Alloys");
+			}
+			else if (have_tech(who, "Cold Casting") <= 0)
+			{
+				research_tech_with_cost(who,"Cold Casting");
+			}
+			else if (have_tech(who, "Steel") <= 0)
+			{
+				research_tech_with_cost(who,"Steel");
+			}
+			
+			if (have_tech(who, "Forage") <= 0)
+			{
+				research_tech_with_cost(who,"Forage");
+			}
+			else if (have_tech(who, "Supply") <= 0)
+			{
+				research_tech_with_cost(who,"Supply");
+			}
+			else if (have_tech(who, "Logistics") <= 0)
+			{
+				research_tech_with_cost(who,"Logistics");
+			}	
+		}
+	}
+	
+	return false;
+}
+
+bool scenario CheckPopulation(int who)
+{
+	int population_now = population(who);
+	int population_max = population_cap(who);
+	
+	if (population_now >= population_max)
+	{
+		if (have_tech(who, "The Art of War") <= 0)
+		{
+			research_tech_with_cost(who, "The Art of War");
+		}
+		else if (have_tech(who, "Mercenaries") <= 0)
+		{
+			research_tech_with_cost(who, "Mercenaries");
+		}
+		else if (have_tech(who, "Standing Army") <= 0)
+		{
+			research_tech_with_cost(who, "Standing Army");
+		}
+		else if (have_tech(who, "Conscription") <= 0)
+		{
+			research_tech_with_cost(who, "Conscription");
+		}
+		else if (have_tech(who, "Levee en Masse") <= 0)
+		{
+			research_tech_with_cost(who, "Levee en Masse");
+		}
+		else if (have_tech(who, "Nation-in-Arms") <= 0)
+		{
+			research_tech_with_cost(who, "Nation-in-Arms");
+		}
+		else if (have_tech(who, "Selective Service") <= 0)
+		{
+			research_tech_with_cost(who, "Selective Service");
+		}
+	}
+	return false;
+}
+
+bool scenario CheckCommerceCap(int who)
+{
+	if (commerce_cap_warning(who) == 1)
+	{
+		if (have_tech(who, "Barter") <= 0)
+		{
+			research_tech_with_cost(who, "Barter");
+		}
+		else if (have_tech(who, "Coinage") <= 0)
+		{
+			research_tech_with_cost(who, "Coinage");
+		}
+		else if (have_tech(who, "Trade") <= 0)
+		{
+			research_tech_with_cost(who, "Trade");
+		}
+		else if (have_tech(who, "Mercantilism") <= 0)
+		{
+			research_tech_with_cost(who, "Mercantilism");
+		}
+		else if (have_tech(who, "Finance") <= 0)
+		{
+			research_tech_with_cost(who, "Finance");
+		}
+		else if (have_tech(who, "Assembly Line") <= 0)
+		{
+			research_tech_with_cost(who, "Assembly Line");
+		}
+		else if (have_tech(who, "Globalization") <= 0)
+		{
+			research_tech_with_cost(who, "Globalization");
+		}
+	}
+	return false;
+}
+
+bool scenario BuildMarket(int who)
+{
+	
+	if (have_tech(who, "Barter") <= 0)
+	{
+		return false;
+	}
+	
+	int limit_market = 1;
+	for (int i = 1; i <= num_cities(who); i++)
+	{
+		string cityFoundName = find_city_with_num(who,i);
+		int num_build = num_city_buildings(who, cityFoundName, "Market", true);
+		if (num_build < limit_market)
+		{
+			int find_idle_civi = find_num_idle_unit(who, "Citizen");
+			if (find_idle_civi >= 1)
+			{
+				place_building_with_cost(who, "Market", cityFoundName);
+			}
+			else if(num_type_queued(who, find_city_id(cityFoundName),"Citizen") <= 0)
+			{
+				train_unit_at_with_cost(who,1,"Citizen",find_city_id(cityFoundName));
+			}
+		}
+		
+		int market_id = find_build_at_city(who, find_capital(who), "Market",false);
+	
+		if (market_id != 0 && market_id != -1)
+		{
+			int max_caravan = num_cities(who)-1;
+			int num_caravan = num_caravan_routes(who);
+			
+			if (num_caravan < max_caravan && num_type_queued(who, market_id, "Caravan") <= 0 && find_idle_caravan(who) <= 0)
+			{
+				train_unit_at_with_cost(who,1,"Caravan",market_id);
+			}
+		}
+	}
+
+	
+	return false;
+}
+
+bool scenario BuildTemple(int who)
+{
+	int limit_temple = 1;
+	
+	string capital_name = find_capital(who);
+	int capital_id = find_city_id(capital_name);
+	
+	if (have_tech(who, "Written Word") <= 0)
+	{
+		research_tech_with_cost(who, "Written Word");
+		set_timer("update_tech_science_tmr",10);
+	}
+	else
+	{
+		int num_temple = num_city_buildings(who, find_capital(who), "Temple", true);
+		if (num_temple < limit_temple)
+		{
+			place_building_with_cost(who, "Temple", find_capital(who));
+		}
+	}
+	
+	int id_temple = num_city_buildings(who, find_capital(who), "Temple", false);
+	
+	if (id_temple != 0 && id_temple != -1)
+	{
+		if (have_tech(who,"Taxation") <= 0)
+		{
+			research_tech_with_cost(who, "Taxation");
+		}
+		else if (have_tech(who,"Vassalage") <= 0)
+		{
+			research_tech_with_cost(who, "Vassalage");
+		}
+		else if (have_tech(who,"Social Contract") <= 0)
+		{
+			research_tech_with_cost(who, "Social Contract");
+		}
+		else if (have_tech(who,"Income Tax") <= 0)
+		{
+			research_tech_with_cost(who, "Income Tax");
+		}
+	}
+	
+	return false;
+}
+
+bool scenario BuildUniversity(int who)
+{
+	if (have_tech(who, "Classical Age") <= 0)
+	{
+		return false;
+	}
+	
+	int limit_university = 1;
+	for (int i = 1; i <= num_cities(who); i++)
+	{
+		string cityFoundName = find_city_with_num(who,i);
+		int num_build = num_city_buildings(who, cityFoundName, "University", true);
+		if (num_build < limit_university)
+		{
+			int find_idle_civi = find_num_idle_unit(who, "Citizen");
+			if (find_idle_civi >= 1)
+			{
+				place_building_with_cost(who, "University", cityFoundName);
+			}
+			else if(num_type_queued(who, find_city_id(cityFoundName),"Citizen") <= 0)
+			{
+				train_unit_at_with_cost(who,1,"Citizen",find_city_id(cityFoundName));
+			}
+		}
+		
+		int university_id = find_build_at_city(who, cityFoundName, "University",false);
+	
+		if (university_id != 0 && university_id != -1)
+		{
+			train_unit_at_with_cost(who,7,"Scholar",university_id);
+			
+			if (cityFoundName == find_capital(who))
+			{
+				if (have_tech(who,"Literacy") <= 0)
+				{
+					research_tech_with_cost(who, "Literacy");
+				}
+				else if (have_tech(who,"Printing Press") <= 0)
+				{
+					research_tech_with_cost(who, "Printing Press");
+				}
+				else if (have_tech(who,"Scientific Method") <= 0)
+				{
+					research_tech_with_cost(who, "Scientific Method");
+				}
+				else if (have_tech(who,"Institutional Research") <= 0)
+				{
+					research_tech_with_cost(who, "Institutional Research");
+				}
+				else if (have_tech(who,"Supercomputers") <= 0)
+				{
+					research_tech_with_cost(who, "Supercomputers");
+				}
+			}
+		}
+	}
+
+	
+	return false;
+}
+
+bool scenario CanBuildDock(int who)
+{
+	if (have_tech(who, "Barter") <= 0)
+	{
+		return false;
+	}
+	
+	int limit_dock = 1;
+	int num_dock_nations = 0;
+	for (int i = 1; i <= num_cities(who); i++)
+	{
+		string cityFoundName = find_city_with_num(who,i);
+		int num_dock_city = num_city_buildings(who, cityFoundName, "Dock", true);
+		if (num_dock_city != -1)
+		{
+			num_dock_nations += num_dock_city;
+		}
+	}
+	
+	if (num_dock_nations == 1)
+	{
+		return false;
+	}
+	
+	for (int j = 1; j <= num_cities(who); j++)
+	{
+		string cityFoundName = find_city_with_num(who,j);
+		int num_dock_city = num_city_buildings(who, cityFoundName, "Dock", true);
+		if (num_dock_city == 0)
+		{
+			int find_idle_civi = find_num_idle_unit(who, "Citizen");
+			if (find_idle_civi >= 1)
+			{
+				place_building_with_cost(who, "Dock", cityFoundName);
+			}
+			else if(num_type_queued(who, find_city_id(cityFoundName),"Citizen") <= 0)
+			{
+				train_unit_at_with_cost(who,1,"Citizen",find_city_id(cityFoundName));
+			}
+		}
+	}
+
+	
+	return false;
+}
+
+bool scenario UpdateTechScience(int who)
+{
+	if (have_tech(who, "Mathematics") <= 0)
+	{
+		research_tech_with_cost(who, "Mathematics");
+	}
+	else if (have_tech(who, "Chemistry") <= 0)
+	{
+		research_tech_with_cost(who, "Chemistry");
+	}
+	else if (have_tech(who, "Laws of Nature") <= 0)
+	{
+		research_tech_with_cost(who, "Laws of Nature");
+	}
+	else if (have_tech(who, "Electricity") <= 0)
+	{
+		research_tech_with_cost(who, "Electricity");
+	}
+	else if (have_tech(who, "Electronics") <= 0)
+	{
+		research_tech_with_cost(who, "Electronics");
+	}
+	else if (have_tech(who, "Computerization") <= 0)
+	{
+		research_tech_with_cost(who, "Computerization");
+	}
+	
+	return false;
+}
+
+bool scenario UpdateTechCity(int who)
+{
+	int numCity = num_cities(who);
+	
+	if (have_tech(who, "City State") <= 0 && numCity >= 1)
+	{
+		research_tech_with_cost(who, "City State");
+	}
+	else if (have_tech(who, "Empire") <= 0 && numCity >= 2)
+	{
+		research_tech_with_cost(who, "Empire");
+	}
+	else if (have_tech(who, "Feudalism") <= 0 && numCity >= 3)
+	{
+		research_tech_with_cost(who, "Feudalism");
+	}
+	else if (have_tech(who, "Divine Right") <= 0 && numCity >= 4)
+	{
+		research_tech_with_cost(who, "Divine Right");
+	}
+	else if (have_tech(who, "Constitution") <= 0 && numCity >= 4)
+	{
+		research_tech_with_cost(who, "Constitution");
+	}
+	else if (have_tech(who, "Great Power") <= 0 && numCity >= 4)
+	{
+		research_tech_with_cost(who, "Great Power");
+	}
+	else if (have_tech(who, "International Law") <= 0 && numCity >= 4)
+	{
+		research_tech_with_cost(who, "International Law");
+	}
+	return false;
+}
+
+bool scenario UpdateTechAge(int who)
+{
+	
+	if (have_tech(who, "Classical Age") <= 0)
+	{
+		research_tech_with_cost(who, "Classical Age");
+	}
+	else if (have_tech(who, "Medieval Age") <= 0)
+	{
+		research_tech_with_cost(who, "Medieval Age");
+	}
+	else if (have_tech(who, "Gunpowder Age") <= 0)
+	{
+		research_tech_with_cost(who, "Gunpowder Age");
+	}
+	else if (have_tech(who, "Enlightenment Age") <= 0)
+	{
+		research_tech_with_cost(who, "Enlightenment Age");
+	}
+	else if (have_tech(who, "Industrial Age") <= 0)
+	{
+		research_tech_with_cost(who, "Industrial Age");
+	}
+	else if (have_tech(who, "Modern Age") <= 0)
+	{
+		research_tech_with_cost(who, "Modern Age");
+	}
+	else if (have_tech(who, "Information Age") <= 0)
+	{
+		research_tech_with_cost(who, "Information Age");
+	}
+	return false;
+}
+
+
+bool scenario CheckGroupsBuildWork(int who, int build_id)
+{
+	int find;
+	int found;
+	
+	int[] found_list;
+	int count = 0;
+	
+	int num_citizens = num_unit_category(who, "Citizen");
+
+	if (num_citizens <= 0)
+	{
+		return false;
+	}
+	
+	for (int i = 1; i <= num_citizens; i++)
+	{
+		find = find_all_unit(who, "Citizen");
+		for (int j = 1; j <= num_in_group(char_from_int(build_id)); j++)
+		{
+			found = group_id(char_from_int(build_id));
+			if (find == found)
+			{
+				int gath = is_gathering(who, found);
+				if (gath == 0 || gath == -1)
+				{
+					found_list[count] = found;
+					count++;	
+				}
+			}
+		}
+	}
+	
+	clear_group(char_from_int(build_id));
+	
+	for (int h = 0; h < count; h++)
+	{
+		add_to_group(char_from_int(build_id),who,found_list[h]);
+	}
+	
+	return false;
+}
+
+bool scenario NewCheckBuildWork(int who)
+{
+	int build_farm = find_build(who, "Farm");
+	int build_wood = find_build(who, "Woodcutter's Camp");
+	int build_mine = find_build(who, "Mine");
+	int build_oil = find_build(who, "Oil Well");
+	int build_oil_plat = find_build(who, "Oil Platform");
+	
+	if (build_farm != 0 && build_farm != -1)
+	{
+		CheckGroupsBuildWork(who, build_farm);
+		
+		int num_work = num_workers_at_building(who, build_farm);
+		int max_work = max_workers_at_building(who, build_farm);
+		
+		if (num_work != max_work)
+		{
+			int idle_citizen = find_idle_citizen(who);
+			if (idle_citizen != 0 && idle_citizen != -1)
+			{
+				if (!is_in_group(char_from_int(build_farm), who, idle_citizen))
+				{
+					add_to_group(char_from_int(build_farm), who, idle_citizen);	
+				}
+				
+				if(has_move_order(who, idle_citizen) != 1 && is_in_group(char_from_int(build_farm), who, idle_citizen))
+				{
+					int obj_x = object_position_x(who, build_farm);
+					int obj_y = object_position_y(who, build_farm);
+					unit_move_order(who, idle_citizen, obj_x, obj_y);
+				}
+			}
+			else if (num_type_queued(who, find_city_id(find_capital(who)), "Citizen") <= 0 && num_in_group(char_from_int(build_farm)) != max_work)
+			{
+				train_unit_at_with_cost(who, 1, "Citizen", find_city_id(find_capital(who)));
+			}
+		}
+	}
+	
+	if (build_wood != 0 && build_wood != -1)
+	{
+		CheckGroupsBuildWork(who, build_wood);
+		
+		int num_work = num_workers_at_building(who, build_wood);
+		int max_work = max_workers_at_building(who, build_wood);
+		
+		if (num_work != max_work)
+		{
+			int idle_citizen = find_idle_citizen(who);
+			if (idle_citizen != 0 && idle_citizen != -1)
+			{
+				if (!is_in_group(char_from_int(build_wood), who, idle_citizen))
+				{
+					add_to_group(char_from_int(build_wood), who, idle_citizen);	
+				}
+				
+				if(has_move_order(who, idle_citizen) != 1 && is_in_group(char_from_int(build_wood), who, idle_citizen))
+				{
+					int obj_x = object_position_x(who, build_wood);
+					int obj_y = object_position_y(who, build_wood);
+					unit_move_order(who, idle_citizen, obj_x, obj_y);
+				}
+			}
+			else if (num_type_queued(who, find_city_id(find_capital(who)), "Citizen") <= 0 && num_in_group(char_from_int(build_wood)) != max_work)
+			{
+				train_unit_at_with_cost(who, 1, "Citizen", find_city_id(find_capital(who)));
+			}
+		}
+	}
+
+	if (build_mine != 0 && build_mine != -1)
+	{
+		CheckGroupsBuildWork(who, build_mine);
+		
+		int num_work = num_workers_at_building(who, build_mine);
+		int max_work = max_workers_at_building(who, build_mine);
+		
+		if (num_work != max_work)
+		{
+			int idle_citizen = find_idle_citizen(who);
+			if (idle_citizen != 0 && idle_citizen != -1)
+			{
+				if (!is_in_group(char_from_int(build_mine), who, idle_citizen))
+				{
+					add_to_group(char_from_int(build_mine), who, idle_citizen);	
+				}
+				
+				if(has_move_order(who, idle_citizen) != 1 && is_in_group(char_from_int(build_mine), who, idle_citizen))
+				{
+					int obj_x = object_position_x(who, build_mine);
+					int obj_y = object_position_y(who, build_mine);
+					unit_move_order(who, idle_citizen, obj_x, obj_y);
+				}
+			}
+			else if (num_type_queued(who, find_city_id(find_capital(who)), "Citizen") <= 0 && num_in_group(char_from_int(build_mine)) != max_work)
+			{
+				train_unit_at_with_cost(who, 1, "Citizen", find_city_id(find_capital(who)));
+			}
+		}
+	}
+	
+	if (build_oil != 0 && build_oil != -1)
+	{
+		CheckGroupsBuildWork(who, build_oil);
+		
+		int num_work = num_workers_at_building(who, build_oil);
+		int max_work = max_workers_at_building(who, build_oil);
+		
+		if (num_work != max_work)
+		{
+			int idle_citizen = find_idle_citizen(who);
+			if (idle_citizen != 0 && idle_citizen != -1)
+			{
+				if (!is_in_group(char_from_int(build_oil), who, idle_citizen))
+				{
+					add_to_group(char_from_int(build_oil), who, idle_citizen);	
+				}
+				
+				if(has_move_order(who, idle_citizen) != 1 && is_in_group(char_from_int(build_oil), who, idle_citizen))
+				{
+					int obj_x = object_position_x(who, build_oil);
+					int obj_y = object_position_y(who, build_oil);
+					unit_move_order(who, idle_citizen, obj_x, obj_y);
+				}
+			}
+			else if (num_type_queued(who, find_city_id(find_capital(who)), "Citizen") <= 0 && num_in_group(char_from_int(build_oil)) != max_work)
+			{
+				train_unit_at_with_cost(who, 1, "Citizen", find_city_id(find_capital(who)));
+			}
+		}
+	}
+	
+	if (build_oil_plat != 0 && build_oil_plat != -1)
+	{
+		CheckGroupsBuildWork(who, build_oil_plat);
+		
+		int num_work = num_workers_at_building(who, build_oil_plat);
+		int max_work = max_workers_at_building(who, build_oil_plat);
+		
+		if (num_work != max_work)
+		{
+			int idle_citizen = find_idle_citizen(who);
+			if (idle_citizen != 0 && idle_citizen != -1)
+			{
+				if (!is_in_group(char_from_int(build_oil_plat), who, idle_citizen))
+				{
+					add_to_group(char_from_int(build_oil_plat), who, idle_citizen);	
+				}
+				
+				if(has_move_order(who, idle_citizen) != 1 && is_in_group(char_from_int(build_oil_plat), who, idle_citizen))
+				{
+					int obj_x = object_position_x(who, build_oil_plat);
+					int obj_y = object_position_y(who, build_oil_plat);
+					unit_move_order(who, idle_citizen, obj_x, obj_y);
+				}
+			}
+			else if (num_type_queued(who, find_city_id(find_capital(who)), "Citizen") <= 0 && num_in_group(char_from_int(build_oil_plat)) != max_work)
+			{
+				train_unit_at_with_cost(who, 1, "Citizen", find_city_id(find_capital(who)));
+			}
+		}
+	}
+	
+	return false;
+}
+
+scenario
+{
+
+static int AIBotID = 1;
+
+labels {
+  BUILD_CITY_FINISH
+}
+
+run_once {
+  
+  //Aluminum	Spice
+  //Amber		Sugar
+  //Bison		Sulphur
+  //Citrus		Titanium
+  //Coal		Tobacco
+  //Copper		Uranium
+  //Cotton		Whales
+  //Diamonds	Wine
+  //Dye			Wool
+  //Fish
+  //Furs
+  //Gems
+  //Horses
+  //Marble
+  //Obsidian
+  //Papyrus
+  //Peacocks
+  //Relics
+  //Rubber
+  //Salt
+  //Silk
+  //Silver
+  
+  train_unit(AIBotID, 5, "Citizen");
+  set_timer("city_building_tmr", 2);
+  set_timer("farm_building_tmr", 2);
+  set_timer("oil_building_tmr", 2);
+  set_timer("woodcutter_building_tmr", 2);
+  set_timer("market_building_tmr", 2);
+  set_timer("temple_building_tmr", 5);
+  set_timer("mine_building_tmr", 2);
+  set_timer("population_limit", 5);
+  set_timer("commerce_cap_tmr", 5);
+  set_timer("check_build_work", 2);
+  set_timer("update_tech_city_tmr",15);
+  set_timer("update_tech_age_tmr",15);
+  set_timer("university_building_tmr", 2);
+  set_timer("powerup_building_tmr", 2);
+  set_timer("dock_building_tmr", 2);
+}
+
+trigger city_build(timer_expired("city_building_tmr")) {
+  if (have_tech(AIBotID, "City State") > 0 && num_cities(AIBotID) == 1) {
+	  CanBuildCityHere(AIBotID);
+  }
+  else if (have_tech(AIBotID, "Empire") > 0 && num_cities(AIBotID) == 2)
+  {
+	  CanBuildCityHere(AIBotID);
+  }
+  else if (have_tech(AIBotID, "Feudalism") > 0 && num_cities(AIBotID) == 3)
+  {
+	  CanBuildCityHere(AIBotID);
+  }
+  else if (have_tech(AIBotID, "Divine Right") > 0 && num_cities(AIBotID) == 4)
+  {
+	  CanBuildCityHere(AIBotID);
+	  return BUILD_CITY_FINISH;
+  }
+  int rand = rand_int(5,15);
+  enable_trigger("city_build");
+  set_timer("city_building_tmr", rand);
+}
+
+trigger dock_build(timer_expired("dock_building_tmr"))
+{
+	int rand = rand_int(5,15);
+	CanBuildDock(AIBotID);
+	enable_trigger("dock_build");
+	set_timer("dock_building_tmr", rand);
+}
+
+trigger oil_build(timer_expired("oil_building_tmr"))
+{
+	int rand = rand_int(5,15);
+	CanBuildOilWellOrPlat(AIBotID);
+	enable_trigger("oil_build");
+	set_timer("oil_building_tmr", rand);
+}
+
+trigger farm_build(timer_expired("farm_building_tmr"))
+{
+int rand = rand_int(5,15);
+CanBuildFarm(AIBotID);
+enable_trigger("farm_build");
+set_timer("farm_building_tmr", rand);
+}
+
+trigger population_check(timer_expired("population_limit"))
+{
+	int rand = rand_int(5,10);
+	CheckPopulation(AIBotID);
+	enable_trigger("population_check");
+	set_timer("population_limit",rand);
+}
+
+trigger commerce_cap(timer_expired("commerce_cap_tmr"))
+{
+	int rand = rand_int(5,10);
+	CheckCommerceCap(AIBotID);
+	enable_trigger("commerce_cap");
+	set_timer("commerce_cap_tmr",rand);
+}
+
+trigger woodcutter_build(timer_expired("woodcutter_building_tmr"))
+{
+	int rand = rand_int(5,15);
+	CanBuildWoodCutter(AIBotID);
+	enable_trigger("woodcutter_build");
+	set_timer("woodcutter_building_tmr", rand);
+}
+
+trigger check_buildwork(timer_expired("check_build_work"))
+{
+	int rand = rand_int(5,15);
+	NewCheckBuildWork(AIBotID);
+	enable_trigger("check_buildwork");
+	set_timer("check_build_work", rand);
+}
+	
+trigger market_build(timer_expired("market_building_tmr"))
+{
+	int rand = rand_int(5,15);
+	BuildMarket(AIBotID);
+	enable_trigger("market_build");
+	set_timer("market_building_tmr",rand);
+}
+
+trigger temple_build(timer_expired("temple_building_tmr"))
+{
+	BuildTemple(AIBotID);
+	enable_trigger("temple_build");
+	set_timer("temple_building_tmr", 5);
+}
+
+trigger update_tech_science(timer_expired("update_tech_science_tmr"))
+{
+	int rand = rand_int(100,120);
+	UpdateTechScience(AIBotID);
+	enable_trigger("update_tech_science");
+	set_timer("update_tech_science_tmr",rand);
+}
+
+trigger update_tech_city(timer_expired("update_tech_city_tmr"))
+{
+	int rand = rand_int(120,140);
+	UpdateTechCity(AIBotID);
+	enable_trigger("update_tech_city");
+	set_timer("update_tech_city_tmr",rand);
+}
+
+trigger update_tech_age(timer_expired("update_tech_age_tmr"))
+{
+	int rand = rand_int(10,30);
+	UpdateTechAge(AIBotID);
+	enable_trigger("update_tech_age");
+	set_timer("update_tech_age_tmr", rand);
+}
+
+trigger university_build(timer_expired("university_building_tmr"))
+{
+	int rand = rand_int(5,15);
+	BuildUniversity(AIBotID);
+	enable_trigger("university_build");
+	set_timer("university_building_tmr", rand);
+}
+
+trigger mine_build(timer_expired("mine_building_tmr"))
+{
+	int rand = rand_int(5,15);
+	CanBuildMine(AIBotID);
+	enable_trigger("mine_build");
+	set_timer("mine_building_tmr", rand);
+}
+
+trigger powerup_build(timer_expired("powerup_building_tmr"))
+{
+	int rand = rand_int(5,15);
+	CanBuildPowerUp(AIBotID);
+	enable_trigger("powerup_build");
+	set_timer("powerup_building_tmr",rand);
+}
+
+}
